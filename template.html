@@ -168,7 +168,16 @@ td {
   width: 100%;
   height: 70.93mm;
   display: flex;
-  justify-content: end;
+  align-items: end;
+  flex-direction: column;
+  margin-bottom: 60px;
+}
+
+.chart-container h2{
+  align-self: baseline;
+  font-size: 11pt;
+  text-transform: uppercase;
+  max-width: 51.7mm;
 }
 
 canvas {
@@ -388,7 +397,7 @@ canvas {
     				<td colspan="2"></td>
 					</tr>
 					<tr>
-						<td><p class="subtitle">Մասնակցած մարզայցեր</p></td>
+						<td><p class="subtitle">Մասնակցած մարզայցեր / միջոցառումներ</p></td>
 						<td><p class="data">{{trips}}</p></td>
 					</tr>
 					<tr class="spaced-row">
@@ -426,7 +435,16 @@ canvas {
 				</tbody>
 			</table>
 		</div>
+    <div class="success-story">
+			<h2>Հաջողության պատմություն</h2>
+      <img src="{{storyImg}}">
+      <div class="content">
+				<h3>{{storyTitle}}</h3>
+				<p>{{storyText}}</p>
+			</div>
+		</div>
 		<div class="chart-container" id="chart-container">
+      <h2>Փոփոխությունների գրաֆիկ</h2>
 			<canvas id="chart"></canvas>
 		</div>
 		<div class="feadback" id="feadback">
@@ -437,20 +455,13 @@ canvas {
 				<p class="giver">{{giver}}</p>
 			</div>
 		</div>
-		<div class="success-story">
-			<h2>Հաջողության պատմություն</h2>
-      <img src="{{storyImg}}">
-      <div class="content">
-				<h3>{{storyTitle}}</h3>
-				<p>{{storyText}}</p>
-			</div>
-		</div>
+		
 		<div class="share" id="story-link">
 				<p>Կարող եք տարածել մարզեցի երեխայի հաջողության պատմությունը</p>
 				<p>Լուսանկարը ներբեռնելու համար սեղմեք <a href="{{storyLink}}" target="_blank">այստեղ</a>:</p>
 		</div>
 		<div class="thank-you">
-			<p>Շնորհակալություն մեր կողքին լինելու եւ Լիզա Ասատրյանի աճի ու զարգացման գործում անմիջական դեր ունենալու համար։ Խոստանում ենք երկու ամիս հետո նորից կապի դուրս գալ եւ տրամադրել նոր տվյալներ։</p>
+			<p>Շնորհակալություն մեր կողքին լինելու եւ {{name}}ի աճի ու զարգացման գործում անմիջական դեր ունենալու համար։ Խոստանում ենք երկու ամիս հետո նորից կապի դուրս գալ եւ տրամադրել նոր տվյալներ։</p>
 			<p>«Մարզերի երեխաները մարզերում» ՀԿ<br>Նախագահ՝ Ա. Մարգարյան</p>
 		</div>
 		<div class="signature">

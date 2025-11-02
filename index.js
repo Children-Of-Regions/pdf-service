@@ -32,17 +32,39 @@ function replaceTemplate(template, data) {
   return template.replace(/{{\s*(\w+)\s*}}/g, (_, key) => {
     let value = data[key];
     if (value === undefined) return `{{${key}}}`;
-    // Եթե key-ը interests կամ webinars, յուրաքանչյուր տողը <li>
-    if (key === 'interests' || key === 'webinars') {
-      return value
-        .split('\n')
-        .map(line => `<li>${line.replace(/^- /, '').trim()}</li>`)
-        .join('');
+
+    // Դաշտեր, որոնք պետք է ունենան հատուկ ձևավորում
+    const listFields = [
+      "interests",
+      "webinars",
+      "team",
+      "position",
+      "trips",
+      "tasks",
+      "leadershipAcademy"
+    ];
+
+    if (listFields.includes(key)) {
+      // Հեռացնել վերջի դատարկ տողերը
+      const lines = String(value)
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line !== "");
+
+      // Եթե միայն մեկ տող՝ որպես <p>
+      if (lines.length === 1) {
+        return `<p>${lines[0]}</p>`;
+      }
+
+      // Եթե մեկից շատ են՝ որպես <ul><li>...</li></ul>
+      return `<ul>` + lines.map(line => `<li>${line.replace(/^- /, "").trim()}</li>`).join("") + `</ul>`;
     }
-    // Այլ բոլոր նոր տողերը <br>-ով փոխարինել
-    return String(value).replace(/\n/g, '<br>');
+
+    // Այլ դաշտերի համար նոր տողերը փոխարինել <br>-ով
+    return String(value).replace(/\n/g, "<br>");
   });
 }
+
 // Start OAuth flow
 app.get("/auth", (req, res) => {
   const url = oauth2Client.generateAuthUrl({
