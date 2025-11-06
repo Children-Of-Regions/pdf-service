@@ -6,9 +6,14 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: "10mb" }));
+
+// Test mode flag - read from environment variable, default to false (production mode)
+const TEST_MODE = process.env.TEST_MODE === 'true';
+
 // OAuth2 client setup
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -17,6 +22,7 @@ const oauth2Client = new google.auth.OAuth2(
 );
 let tokens = null;
 const drive = google.drive({ version: "v3", auth: oauth2Client });
+
 // Load tokens if exist
 if (fs.existsSync("tokens.json")) {
   try {
@@ -27,6 +33,7 @@ if (fs.existsSync("tokens.json")) {
     console.error("Failed to load tokens:", err.message);
   }
 }
+
 // Template replacement function
 function replaceTemplate(template, data) {
   return template.replace(/{{\s*(\w+)\s*}}/g, (_, key) => {
@@ -67,6 +74,9 @@ function replaceTemplate(template, data) {
 
 // Start OAuth flow
 app.get("/auth", (req, res) => {
+  if (TEST_MODE) {
+    return res.send("<h1>Test Mode Active</h1><p>PDFs will be saved locally. No authentication needed.</p>");
+  }
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive"],
@@ -74,8 +84,12 @@ app.get("/auth", (req, res) => {
   });
   res.redirect(url);
 });
+
 // OAuth callback
 app.get("/oauth/callback", async (req, res) => {
+  if (TEST_MODE) {
+    return res.send("<h1>Test Mode Active</h1><p>No authentication needed in test mode.</p>");
+  }
   const { code } = req.query;
   if (!code) return res.status(400).send("Missing code");
   try {
@@ -89,20 +103,26 @@ app.get("/oauth/callback", async (req, res) => {
     res.status(500).send("Authentication failed");
   }
 });
+
 // Check auth status
 app.get("/auth-status", (req, res) => {
+  if (TEST_MODE) {
+    return res.json({ authenticated: true, testMode: true });
+  }
   if (tokens) {
-    res.json({ authenticated: true });
+    res.json({ authenticated: true, testMode: false });
   } else {
-    res.json({ authenticated: false, authUrl: "/auth" });
+    res.json({ authenticated: false, authUrl: "/auth", testMode: false });
   }
 });
+
 function formatDate(isoDate) {
   if (!isoDate) return "";
   const [year, month, day] = isoDate.split("-");
   return `${day} / ${month} / ${year}`;
 }
-// Main endpoint: Template + Data → PDF → Drive
+
+// Main endpoint: Template + Data → PDF → Drive or Local
 app.post("/upload-pdf", async (req, res) => {
   console.log("Full request body:", req.body);
   
@@ -112,14 +132,19 @@ app.post("/upload-pdf", async (req, res) => {
     outsideActivities, feadback, giverPosition, giver, previousMonths,
     previousCourses, previousTrips, previousVolunteering, previousTasks,
     currentMonths, currentCourses, currentTrips, currentVolunteering,
-    currentTasks, date, fileName, folderId, storyImg, storyTitle, storyText, storyLink 
+    currentTasks, date, fileName, folderId, futurePlans, storyImg, storyTitle, storyText, storyLink 
   } = req.body;
-  // Load tokens if needed
-  if (!tokens && fs.existsSync("tokens.json")) {
-    tokens = JSON.parse(fs.readFileSync("tokens.json", "utf8"));
-    oauth2Client.setCredentials(tokens);
+  
+  // Skip authentication check in test mode
+  if (!TEST_MODE) {
+    // Load tokens if needed
+    if (!tokens && fs.existsSync("tokens.json")) {
+      tokens = JSON.parse(fs.readFileSync("tokens.json", "utf8"));
+      oauth2Client.setCredentials(tokens);
+    }
+    if (!tokens) return res.status(401).json({ error: "Not authenticated", authUrl: "/auth" });
   }
-  if (!tokens) return res.status(401).json({ error: "Not authenticated", authUrl: "/auth" });
+  
   try {
     // Read template.html file
     const templatePath = path.join(process.cwd(), 'template.html');
@@ -136,26 +161,35 @@ app.post("/upload-pdf", async (req, res) => {
       outsideActivities, feadback, giverPosition, giver, previousMonths,
       previousCourses, previousTrips, previousVolunteering, previousTasks,
       currentMonths, currentCourses, currentTrips, currentVolunteering,
-      currentTasks, date: formatDate(date), storyImg, storyTitle, storyText, storyLink
+      currentTasks, date: formatDate(date), futurePlans, storyImg, storyTitle, storyText, storyLink
     };
+    
     // Replace template placeholders with actual data
     const processedHtml = replaceTemplate(htmlTemplate, templateData);
     
     const pdfFileName = fileName ? `${fileName}.pdf` : `document-${Date.now()}.pdf`;
     let browser;
+    
     try {
-      browser = await puppeteer.launch({ headless: "new",  executablePath: '/usr/bin/chromium' });
+      browser = await puppeteer.launch({ headless: "new" });
       const page = await browser.newPage();
       await page.setContent(processedHtml, { waitUntil: "networkidle0", timeout: 30000 });
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Remove elements based on empty conditions
       await page.evaluate((data) => {
-        // Remove academy element if leadershipAcademy is empty
+        // Remove academy element if leadershipAcademy and story is empty
         if (!data.leadershipAcademy || data.leadershipAcademy.trim() === '') {
           const academyElement = document.getElementById('academy');
           if (academyElement) {
             academyElement.remove();
+          }
+        }
+
+        if (!data.storyText || data.storyText.trim() === '') {
+          const storyElement = document.getElementById('story');
+          if (storyElement) {
+            storyElement.remove();
           }
         }
         
@@ -210,6 +244,7 @@ app.post("/upload-pdf", async (req, res) => {
           canvas.replaceWith(img); 
         });
       });
+      
       const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
       const heightInMM = Math.max(297, (bodyHeight * 0.264583)); 
       const pdfBuffer = await page.pdf({
@@ -218,20 +253,45 @@ app.post("/upload-pdf", async (req, res) => {
         width: "210mm",
         height: `${heightInMM}mm`,
       });
-      const bufferStream = new PassThrough();
-      bufferStream.end(pdfBuffer);
-      const fileMetadata = { name: pdfFileName };
-      if (folderId) fileMetadata.parents = [folderId];
-      const file = await drive.files.create({
-        requestBody: fileMetadata,
-        media: { mimeType: "application/pdf", body: bufferStream },
-        fields: "id, webViewLink",
-      });
-      res.json({
-        success: true,
-        fileId: file.data.id,
-        viewLink: file.data.webViewLink,
-      });
+      
+      if (TEST_MODE) {
+        // Save locally in test mode
+        const outputDir = path.join(process.cwd(), 'test-pdfs');
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        const localPath = path.join(outputDir, pdfFileName);
+        fs.writeFileSync(localPath, pdfBuffer);
+        
+        console.log(`✅ PDF saved locally: ${localPath}`);
+        
+        res.json({
+          success: true,
+          testMode: true,
+          localPath: localPath,
+          fileName: pdfFileName,
+          message: "PDF saved locally in test-pdfs folder"
+        });
+      } else {
+        // Upload to Drive in production mode
+        const bufferStream = new PassThrough();
+        bufferStream.end(pdfBuffer);
+        const fileMetadata = { name: pdfFileName };
+        if (folderId) fileMetadata.parents = [folderId];
+        const file = await drive.files.create({
+          requestBody: fileMetadata,
+          media: { mimeType: "application/pdf", body: bufferStream },
+          fields: "id, webViewLink",
+        });
+        
+        res.json({
+          success: true,
+          testMode: false,
+          fileId: file.data.id,
+          viewLink: file.data.webViewLink,
+        });
+      }
     } catch (err) {
       console.error("PDF generation error:", err);
       res.status(500).json({ error: err.message });
@@ -243,7 +303,12 @@ app.post("/upload-pdf", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.listen(PORT, () => {
   console.log(`🚀 PDF API running on http://localhost:${PORT}`);
-  console.log(`📝 Visit http://localhost:${PORT}/auth to authenticate`);
+  if (TEST_MODE) {
+    console.log(`⚠️  TEST MODE: PDFs will be saved locally in 'test-pdfs' folder`);
+  } else {
+    console.log(`📝 Visit http://localhost:${PORT}/auth to authenticate`);
+  }
 });

@@ -1,6 +1,6 @@
 {
   "name": "pdf-service",
-  "version": "0.4",
+  "version": "0.5",
   "type": "module",
   "description": "HTML to PDF converter with Google Drive upload",
   "main": "index.js",
