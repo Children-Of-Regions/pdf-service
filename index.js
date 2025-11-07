@@ -203,6 +203,13 @@ app.post("/upload-pdf", async (req, res) => {
             }
           });
         }
+
+        if (!data.feadback || data.feadback.trim() === '') {
+          const feadbackElement = document.getElementById('feadback');
+          if (feadbackElement) {
+            feadbackElement.remove();
+          }
+        }
         
         // Remove story-link element if storyLink is empty
         if (!data.storyLink || data.storyLink.trim() === '') {
