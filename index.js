@@ -47,7 +47,6 @@ function replaceTemplate(template, data) {
       "team",
       "position",
       "trips",
-      "tasks",
       "leadershipAcademy"
     ];
 
@@ -128,11 +127,10 @@ app.post("/upload-pdf", async (req, res) => {
   
   const { 
     name, region, community, age, status, img, interests, team, position, 
-    webinars, trips, tasks, leadershipAcademy, communityActivities, 
+    webinars, trips, leadershipAcademy, communityActivities, 
     outsideActivities, feadback, giverPosition, giver, previousMonths,
-    previousCourses, previousTrips, previousVolunteering, previousTasks,
-    currentMonths, currentCourses, currentTrips, currentVolunteering,
-    currentTasks, date, fileName, folderId, futurePlans, storyImg, storyTitle, storyText, storyLink 
+    previousCourses, previousTrips, previousVolunteering,
+    currentMonths, currentCourses, currentTrips, currentVolunteering, date, fileName, folderId, futurePlans, storyImg, storyTitle, storyText, storyLink 
   } = req.body;
   
   // Skip authentication check in test mode
@@ -157,11 +155,10 @@ app.post("/upload-pdf", async (req, res) => {
     // Prepare data object for replacement
     const templateData = {
       name, region, community, age, status, img, interests, team, position,
-      webinars, trips, tasks, leadershipAcademy, communityActivities,
+      webinars, trips, leadershipAcademy, communityActivities,
       outsideActivities, feadback, giverPosition, giver, previousMonths,
-      previousCourses, previousTrips, previousVolunteering, previousTasks,
-      currentMonths, currentCourses, currentTrips, currentVolunteering,
-      currentTasks, date: formatDate(date), futurePlans, storyImg, storyTitle, storyText, storyLink
+      previousCourses, previousTrips, previousVolunteering,
+      currentMonths, currentCourses, currentTrips, currentVolunteering, date: formatDate(date), futurePlans, storyImg, storyTitle, storyText, storyLink
     };
     
     // Replace template placeholders with actual data
@@ -224,8 +221,7 @@ app.post("/upload-pdf", async (req, res) => {
           data.previousMonths,
           data.previousCourses,
           data.previousTrips,
-          data.previousVolunteering,
-          data.previousTasks
+          data.previousVolunteering
         ];
         
         const hasEmptyPreviousData = previousData.some(value => 

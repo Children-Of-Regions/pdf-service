@@ -403,10 +403,6 @@ canvas {
 					<tr class="spaced-row">
     				<td colspan="2"></td>
 					</tr>
-					<tr>
-						<td><p class="subtitle">Կատարած առաջադրանքներ, ոլորտներ</p></td>
-						<td><p class="data">{{tasks}}</p></td>
-					</tr>
 					<tr class="spaced-row">
     				<td colspan="2"></td>
 					</tr>
@@ -497,17 +493,17 @@ canvas {
       new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Դասընթացներ', 'Մարզայցեր', 'Կամավորություն(ժամ/օր)', 'Առաջադրանք'],
+          labels: ['Դասընթացներ', 'Մարզայցեր', 'Կամավորություն(ժամ/օր)'],
           datasets: [
             {
               label: '{{previousMonths}}',
-              data: [{{previousCourses}}, {{previousTrips}}, {{previousVolunteering}}, {{previousTasks}}].map(transformData),
+              data: [{{previousCourses}}, {{previousTrips}}, {{previousVolunteering}}].map(transformData),
               backgroundColor: '#e6a800',
               borderRadius: 5
             },
             {
               label: '{{currentMonths}}',
-              data: [{{currentCourses}}, {{currentTrips}}, {{currentVolunteering}}, {{currentTasks}}].map(transformData),
+              data: [{{currentCourses}}, {{currentTrips}}, {{currentVolunteering}}].map(transformData),
               backgroundColor: '#2e7d32',
               borderRadius: 5
             }
