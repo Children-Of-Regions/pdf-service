@@ -14,6 +14,9 @@ app.use(express.json({ limit: "10mb" }));
 // Test mode flag - read from environment variable, default to false (production mode)
 const TEST_MODE = process.env.TEST_MODE === 'true';
 
+// Logging flag - read from environment variable, default to false
+const ENABLE_LOGS = process.env.ENABLE_LOGS === 'true';
+
 // OAuth2 client setup
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -123,7 +126,9 @@ function formatDate(isoDate) {
 
 // Main endpoint: Template + Data → PDF → Drive or Local
 app.post("/upload-pdf", async (req, res) => {
-  console.log("Full request body:", req.body);
+  if (ENABLE_LOGS) {
+    console.log("Full request body:", req.body);
+  }
   
   const { 
     name, region, community, age, status, img, interests, team, position, 
