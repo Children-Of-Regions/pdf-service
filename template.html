@@ -490,6 +490,13 @@ canvas {
 
     window.addEventListener('load', function() {
       const ctx = document.getElementById('chart').getContext('2d');
+      const previousData = [{{previousCourses}}, {{previousTrips}}, {{previousVolunteering}}].map(transformData);
+      const currentData = [{{currentCourses}}, {{currentTrips}}, {{currentVolunteering}}].map(transformData);
+
+      const allData = previousData.concat(currentData);
+      const dataMax = Math.max(...allData);
+      const yAxisMax = dataMax > 4 ? dataMax : 4;
+
       new Chart(ctx, {
         type: 'bar',
         data: {
@@ -497,13 +504,13 @@ canvas {
           datasets: [
             {
               label: '{{previousMonths}}',
-              data: [{{previousCourses}}, {{previousTrips}}, {{previousVolunteering}}].map(transformData),
+              data: previousData,
               backgroundColor: '#e6a800',
               borderRadius: 5
             },
             {
               label: '{{currentMonths}}',
-              data: [{{currentCourses}}, {{currentTrips}}, {{currentVolunteering}}].map(transformData),
+              data: currentData,
               backgroundColor: '#2e7d32',
               borderRadius: 5
             }
@@ -512,70 +519,16 @@ canvas {
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: {
-            padding: {
-              left: 10,
-              right: 10,
-              top: 10,
-              bottom: 20
-            }
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: {
-                usePointStyle: true,
-                pointStyle: 'circle',
-                font: {
-                  size: 11,
-                  family: 'Montserratarm'
-                },
-                color: '#000000',
-                padding: 15,
-                boxWidth: 12
-              }
-            }
-          },
           scales: {
-            x: {
-              ticks: {
-                maxRotation: 0,
-                minRotation: 0,
-                font: {
-                  size: 8.5,
-                  family: 'Montserratarm'
-                },
-                color: '#000000',
-                maxTicksLimit: 4
-              },
-              grid: {
-                display: false
-              }
-            },
             y: {
               beginAtZero: true,
-              max: 4,
-              ticks: {
-                stepSize: 1,
-                font: {
-                  size: 11,
-                  family: 'Noto Sans Armenian'
-                },
-                color: '#000000'
-              },
-              grid: {
-                color: '#e0e0e0',
-                lineWidth: 0.5
-              }
-            }
-          },
-          elements: {
-            bar: {
-              borderWidth: 0
+              max: yAxisMax, // dynamic max
+              ticks: { stepSize: 1 }
             }
           }
         }
       });
+
     });
   </script>
 </body>
