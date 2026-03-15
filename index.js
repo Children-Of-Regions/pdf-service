@@ -133,7 +133,7 @@ app.post("/upload-pdf", async (req, res) => {
   const { 
     name, region, community, age, status, img, interests, team, position, 
     webinars, trips, leadershipAcademy, communityActivities, 
-    outsideActivities, feadback, giverPosition, giver, previousMonths,
+    outsideActivities, feedback, giverPosition, giver, previousMonths,
     previousCourses, previousTrips, previousVolunteering,
     currentMonths, currentCourses, currentTrips, currentVolunteering, date, fileName, folderId, futurePlans, storyImg, storyTitle, storyText, storyLink 
   } = req.body;
@@ -161,7 +161,7 @@ app.post("/upload-pdf", async (req, res) => {
     const templateData = {
       name, region, community, age, status, img, interests, team, position,
       webinars, trips, leadershipAcademy, communityActivities,
-      outsideActivities, feadback, giverPosition, giver, previousMonths,
+      outsideActivities, feedback, giverPosition, giver, previousMonths,
       previousCourses, previousTrips, previousVolunteering,
       currentMonths, currentCourses, currentTrips, currentVolunteering, date: formatDate(date), futurePlans, storyImg, storyTitle, storyText, storyLink
     };
@@ -197,7 +197,7 @@ app.post("/upload-pdf", async (req, res) => {
         
         // Remove team-related elements if team is empty
         if (!data.team || data.team.trim() === '') {
-          const elementsToRemove = ['team', 'position', 'team-break-line', 'feadback'];
+          const elementsToRemove = ['team', 'position', 'team-break-line', 'feedback'];
           elementsToRemove.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
@@ -206,10 +206,10 @@ app.post("/upload-pdf", async (req, res) => {
           });
         }
 
-        if (!data.feadback || data.feadback.trim() === '') {
-          const feadbackElement = document.getElementById('feadback');
-          if (feadbackElement) {
-            feadbackElement.remove();
+        if (!data.feedback || data.feedback.trim() === '') {
+          const feedbackElement = document.getElementById('feedback');
+          if (feedbackElement) {
+            feedbackElement.remove();
           }
         }
         
